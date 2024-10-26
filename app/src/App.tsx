@@ -101,8 +101,7 @@ const App: React.FC = () => {
           //consoleに表示
           //   console.log(results.landmarks.flat())
           const normalizedData = normalizeData(results.landmarks.flat());
-          const output = infer(normalizedData);
-          console.log(output);
+          postNormalizedData(normalizedData);
         }
       }
 
@@ -140,27 +139,45 @@ const App: React.FC = () => {
     return normalizedCoordinates;
   };
 
-  // 推論関数の型を定義
-  const infer = async (data: number[][]) => {
+  const postNormalizedData = async (data: number[][]) => {
     try {
-      // TFLiteモデルのロード
-      const model = await tf.loadLayersModel("/model/model.json");
+      const response = await fetch("YOUR_BACKEND_URL", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-      console.log(model);
-
-      // 入力データをTensorに変換
-      const inputTensor = tf.tensor(data);
-
-      // 推論を実行
-      const output = model.predict(inputTensor);
-
-      // 結果を返す
-      return output;
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
     } catch (error) {
-      console.error("推論中にエラーが発生しました:", error);
-      return undefined;
+      console.error("Error posting normalized data:", error);
     }
   };
+
+  // // 推論関数の型を定義
+  // const infer = async (data: number[][]) => {
+  //   try {
+  //     // TFLiteモデルのロード
+  //     const model = await tf.loadLayersModel("/model/model.json");
+
+  //     console.log(model);
+
+  //     // 入力データをTensorに変換
+  //     const inputTensor = tf.tensor(data);
+
+  //     // 推論を実行
+  //     const output = model.predict(inputTensor);
+
+  //     // 結果を返す
+  //     return output;
+  //   } catch (error) {
+  //     console.error("推論中にエラーが発生しました:", error);
+  //     return undefined;
+  //   }
+  // };
 
   useEffect(() => {
     if (handLandmarker) {
