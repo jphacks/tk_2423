@@ -47,7 +47,7 @@ public class SpectramLineRenderer : MonoBehaviour
             var p = new Vector3(x, y, 0) + transform.position;
             points[i] = p;
         }
-
+        
         Render(points);
     }
 

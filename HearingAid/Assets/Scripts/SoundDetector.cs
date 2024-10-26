@@ -4,16 +4,26 @@ using System.Collections;
 public class SoundDetector : MonoBehaviour
 {
     private AudioSource audioSource;
-    private float[] spectrumData = new float[8];  // FFTデータ用
+    public float[] spectrumData = new float[2048];  // FFTデータ用
     private int sampleRate;
+    static readonly float MOVING_AVE_TIME = 0.975f;
+
+    static readonly int MOVING_AVE_SAMPLE = (int)(48000 * MOVING_AVE_TIME);
 
     private float currentHertz = 0;
+
+    [SerializeField] private HornDetection hornDetection;
+
+    [SerializeField] private GameObject hornText;
+
+    [SerializeField] private GameObject hornImage;
 
     void Start()
     {
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.clip = Microphone.Start(null, true, 1, 44100); // マイクからの録音
         audioSource.loop = true;
+        hornText.SetActive(false);
         
         while (!(Microphone.GetPosition(null) > 0)) {} // マイクの準備を待つ
         audioSource.Play();
@@ -40,36 +50,58 @@ public class SoundDetector : MonoBehaviour
     IEnumerator UpdateSpectrum()
 {
     while(true){
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(0.1f);
             // 第一引数に渡す配列に、周波数スペクトルのデータが格納される。
         // FFTのアルゴリズムの特性上、サイズは2のべき乗（2,4,8...1024...)である必要がある。
-        float[] spectrum = new float[64];
-        audioSource.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
+        AudioListener.GetSpectrumData(spectrumData, 0, FFTWindow.BlackmanHarris);
 
-                string spectrumDataString = string.Join(", ", spectrum);
-                Debug.Log("Spectrum Data: [" + spectrumDataString + "]");
+                //string spectrumDataString = string.Join(", ", spectrumData);
+                //Debug.Log("Spectrum Data: [" + spectrumDataString + "]");
 
         // spectrum = new Float[N]の各番地iに格納されるデータspectrum[i]に対応する周波数について
         // spectrum[0]:0Hz, spectrum[N-1]:ナイキスト周波数となっているので、データは、(ナイキスト周波数 / N)Hz 刻みに入っている
         
         // 次に、最も強度の強い周波数成分を求める。まずはデータの番地から
         var max = 0;
-        for (int i = 0; i < spectrum.Length; i++)
+        for (int i = 0; i < spectrumData.Length; i++)
         {
-            var current = spectrum[i];
-            if (current > spectrum[max])
+            var current = spectrumData[i];
+            if (current > spectrumData[max])
             {
                 max = i;
             }
         }
+        Debug.Log("Max: " + max);
+
+        // float[] data = new float[MOVING_AVE_SAMPLE];
+        // audioSource.GetOutputData(data, 0);
+
+        var isDetected = hornDetection.Inference(spectrumData);
+
+        if(isDetected){
+            Debug.Log("Horn Detected");
+            hornText.SetActive(true);
+            hornImage.SetActive(true);
+            Invoke("HideHornText", 3);
+            Invoke("HideHornImage", 3);
+        }
 
         // データのmax番地が最も強度の強い周波数成分である。これを周波数に変換する。
         var nyquistFreq = (float)sampleRate / 2f;
-        currentHertz = nyquistFreq * (max / spectrum.Length);
+        Debug.Log("Nyquist Frequency: " + nyquistFreq);
+        var currentHertz = (float)nyquistFreq * ((float)max / (float)spectrumData.Length);
         Debug.Log("Current Hertz: " + currentHertz);
     }
     
 }
+
+    private void HideHornText(){
+        hornText.SetActive(false);
+    }
+
+    private void HideHornImage(){
+        hornImage.SetActive(false);
+    }
 
 
 

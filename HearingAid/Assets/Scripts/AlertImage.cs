@@ -13,16 +13,16 @@ public class AlertImage : MonoBehaviour
     void Start()
     {
         AlertImage_ = GetComponent<Image>();
-        AlertImage_.enabled = false;
+        this.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        Debug.Log(micAS.now_dB);
+        //Debug.Log(micAS.now_dB);
         if (micAS != null && micAS.now_dB > -20.0f && !isAlerting)
         {
             // Debug.Log("Alert!");
-            
+            this.gameObject.SetActive(true);
             AlertImage_.enabled = true;
             Invoke("ClearAlert", 3.0f);
             
@@ -34,8 +34,8 @@ public class AlertImage : MonoBehaviour
     {
         if (AlertImage_ != null)
         {
-            AlertImage_.enabled = false;
             isAlerting = false;
+            this.gameObject.SetActive(false);
         }
     }
 }

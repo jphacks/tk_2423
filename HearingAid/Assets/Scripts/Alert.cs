@@ -21,16 +21,18 @@ public class Alert : MonoBehaviour
         {
             Debug.LogError("MicAudioSource is not assigned.");
         }
+        this.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        Debug.Log(micAS.now_dB);
+        //Debug.Log(micAS.now_dB);
         if (micAS != null && micAS.now_dB > -20.0f && !isAlerting)
         {
             Debug.Log("Alert!");
             if (AlertText != null)
             {
+                this.gameObject.SetActive(true);
                 AlertText.text = "注意！";
                 Invoke("ClearAlert", 3.0f);
             }
