@@ -1,10 +1,18 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { HandLandmarker, FilesetResolver, NormalizedLandmark } from "@mediapipe/tasks-vision";
+import React, { useRef, useEffect, useState, useCallback } from "react";
+import {
+  HandLandmarker,
+  FilesetResolver,
+  NormalizedLandmark,
+} from "@mediapipe/tasks-vision";
+import * as tflite from "@tensorflow/tfjs-tflite";
+import * as tf from "@tensorflow/tfjs-core";
 
 const App: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [handLandmarker, setHandLandmarker] = useState<HandLandmarker | null>(null);
+  const [handLandmarker, setHandLandmarker] = useState<HandLandmarker | null>(
+    null
+  );
 
   useEffect(() => {
     const initializeHandLandmarker = async () => {
@@ -38,7 +46,9 @@ const App: React.FC = () => {
       const video = videoRef.current;
       if (video && navigator.mediaDevices) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
           video.srcObject = stream;
           video.play();
         } catch (error) {
@@ -50,21 +60,6 @@ const App: React.FC = () => {
     startCamera();
   }, []);
 
-  // ランドマークデータをバックエンドに送信する関数
-  const sendLandmarkData = async (landmarks: NormalizedLandmark[]) => {
-    try {
-      await fetch('/api/landmarks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ landmarks }),
-      });
-    } catch (error) {
-      console.error("エラーが発生しました:", error);
-    }
-  };
-
   // ランドマークをCanvasに描画する関数
   const drawLandmarks = (landmarks: NormalizedLandmark[]) => {
     const canvas = canvasRef.current;
@@ -74,7 +69,7 @@ const App: React.FC = () => {
       if (ctx) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -104,12 +99,11 @@ const App: React.FC = () => {
         if (results.landmarks && results.landmarks.length > 0) {
           // ランドマークデータをCanvasに描画
           drawLandmarks(results.landmarks.flat());
-          // ランドマークデータをバックエンドに送信
-          // await sendLandmarkData(results.landmarks.flat());
           //consoleに表示
-        //   console.log(results.landmarks.flat())
-          console.log(results.handedness)
-
+          //   console.log(results.landmarks.flat())
+          const normalizedData = normalizeData(results.landmarks.flat());
+          const output = infer(normalizedData);
+          console.log(output);
         }
       }
 
@@ -117,14 +111,13 @@ const App: React.FC = () => {
     }
   }, [handLandmarker]);
 
-
-  const transformData = (data: NormalizedLandmark[]): number[][] => {
+  const normalizeData = (data: NormalizedLandmark[]): number[][] => {
     let x = 0;
     let y = 0;
     let z = 0;
     let max = -1;
     const coordinates: number[][] = [];
-  
+
     data.forEach((d, i) => {
       if (i === 0) {
         x = d.x;
@@ -136,14 +129,40 @@ const App: React.FC = () => {
         coordinates.push([d.x - x, d.y - y, d.z - z]);
       }
     });
-  
+
     // maxが正の値であることを確認し、maxが負の場合はそのまま返す
     if (max <= 0) return coordinates;
-  
+
     // maxで各座標を正規化
-    const normalizedCoordinates = coordinates.map((d) => d.map((v) => v / Math.sqrt(max)));
-  
+    const normalizedCoordinates = coordinates.map((d) =>
+      d.map((v) => v / Math.sqrt(max))
+    );
+
     return normalizedCoordinates;
+  };
+
+  // 推論関数の型を定義
+  const infer = async (data: number[][]) => {
+    try {
+      // TFLiteモデルのロード
+      const model = await tflite.loadTFLiteModel(
+        "/a-so-ikami-mikubo-model.tflite"
+      );
+
+      console.log(model);
+
+      // 入力データをTensorに変換
+      const inputTensor = tf.tensor(data);
+
+      // 推論を実行
+      const output = model.predict(inputTensor);
+
+      // 結果を返す
+      return output;
+    } catch (error) {
+      console.error("推論中にエラーが発生しました:", error);
+      return undefined;
+    }
   };
 
   useEffect(() => {
@@ -155,7 +174,13 @@ const App: React.FC = () => {
   return (
     <div>
       {/* カメラ映像を表示するためのvideoタグ */}
-      <video ref={videoRef} autoPlay playsInline muted style={{ display: "none" }} />
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{ display: "none" }}
+      />
       {/* ランドマークを描画するためのcanvasタグ */}
       <canvas ref={canvasRef} style={{ width: "100%", height: "auto" }} />
       <h1>Hand Landmark Detection</h1>
@@ -164,5 +189,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-
