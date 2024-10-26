@@ -4,8 +4,7 @@ import {
   FilesetResolver,
   NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
-import * as tflite from "@tensorflow/tfjs-tflite";
-import * as tf from "@tensorflow/tfjs-core";
+import * as tf from "@tensorflow/tfjs";
 
 const App: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -145,9 +144,7 @@ const App: React.FC = () => {
   const infer = async (data: number[][]) => {
     try {
       // TFLiteモデルのロード
-      const model = await tflite.loadTFLiteModel(
-        "/a-so-ikami-mikubo-model.tflite"
-      );
+      const model = await tf.loadLayersModel("/model/model.json");
 
       console.log(model);
 
