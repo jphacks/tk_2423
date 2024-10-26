@@ -46,7 +46,7 @@ public class TextMeshProBackground : MonoBehaviour
             {
                 Background.SetActive(true);
             }
-            
+
             // 描画サイズを取得
             Vector2 currentSize = textMeshPro.GetRenderedValues(false);
 
@@ -63,7 +63,7 @@ public class TextMeshProBackground : MonoBehaviour
     {
         // 描画位置の計算
         var pos = textMeshPro.textBounds.center;
-        Debug.Log(pos);
+        //Debug.Log(pos);
         var hoseiX = -(PaddingLeft / 2) + (PaddingRight / 2);
         var hoseiY = -(PaddingBottom / 2) + (PaddingTop / 2);
         var hoseiZ = 0.01f;
