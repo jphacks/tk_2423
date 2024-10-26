@@ -33,7 +33,7 @@ public class Alert : MonoBehaviour
             if (AlertText != null)
             {
                 this.gameObject.SetActive(true);
-                AlertText.text = "注意！";
+                AlertText.text = "大音量検知!注意！";
                 Invoke("ClearAlert", 3.0f);
             }
             isAlerting = true;
