@@ -7,7 +7,7 @@ from typing import List
 
 # TensorFlow Liteモデルの読み込みと準備
 # モデルのパスを適宜変更してください
-MODEL_PATH = "./model/a-so-ikami-mikubo-model.tflite"
+MODEL_PATH = "../model/a-so-ikami-mikubo-model.tflite"
 
 # TFLiteモデルの読み込み
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
@@ -35,10 +35,6 @@ class HandLandmarks(BaseModel):
 
 
 # ルートエンドポイントの追加
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Hand Recognition API"}
-
 
 @app.post("/predict")
 def predict(hand_data: HandLandmarks):
@@ -46,15 +42,16 @@ def predict(hand_data: HandLandmarks):
         # OK
         # 手のランドマークデータをnumpy配列に変換し、float32型にキャスト
         input_data = np.array(hand_data.landmark, dtype=np.float32)
-
+        #print(input_data)
         # numpy配列が期待する形状であることを確認
-        if input_data.shape != tuple(input_details[0]['shape'][1:]):
-            raise ValueError(f"入力データの形状が期待される形状 {tuple(input_details[0]['shape'][1:])} と一致しません。")
+        # if input_data.shape != tuple(input_details[0]['shape'][1:]):
+        #     print(f"入力データの形状が期待される形状 {tuple(input_details[0]['shape'][1:])} と一致しません。")
+            
 
         # モデルの入力形状に合わせてリシェイプ
         input_data = input_data.reshape(input_details[0]['shape'])
 
-        print(input_data)
+       # print(input_data)
 
         # 入力データをモデルにセット
         interpreter.set_tensor(input_details[0]['index'], input_data)
@@ -65,7 +62,7 @@ def predict(hand_data: HandLandmarks):
         # 推論結果の取得
         output_data = interpreter.get_tensor(output_details[0]['index'])
 
-        print
+        # print(output_data)
 
         # 結果をJSON形式で返す
         return {"prediction": output_data.tolist()}

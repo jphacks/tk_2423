@@ -13,6 +13,17 @@ const App: React.FC = () => {
     null
   );
 
+  // 予測結果の状態管理
+  const [predictedSign, setPredictedSign] = useState<{
+    sign: string;
+    probability: number;
+  } | null>(null);
+
+  const lastPredictionTimeRef = useRef<number>(0);
+
+  const requestsPerSecond = 2;
+  const requestInterval = 1000 / requestsPerSecond;
+
   useEffect(() => {
     const initializeHandLandmarker = async () => {
       // Mediapipe用のWASMファイルのURLを指定
@@ -96,18 +107,20 @@ const App: React.FC = () => {
         const results = await handLandmarker.detectForVideo(video, startTimeMs);
 
         if (results.landmarks && results.landmarks.length > 0) {
-          // ランドマークデータをCanvasに描画
           drawLandmarks(results.landmarks.flat());
-          //consoleに表示
-          //   console.log(results.landmarks.flat())
           const normalizedData = normalizeData(results.landmarks.flat());
-          postNormalizedData(normalizedData);
+
+          // リクエスト間隔に基づいてリクエストを送信
+          if (performance.now() - lastPredictionTimeRef.current > requestInterval) {
+            lastPredictionTimeRef.current = performance.now();
+            postNormalizedData(normalizedData);
+          }
         }
       }
 
       requestAnimationFrame(renderLoop);
     }
-  }, [handLandmarker]);
+  }, [handLandmarker, requestInterval]);
 
   const normalizeData = (data: NormalizedLandmark[]): number[][] => {
     let x = 0;
@@ -141,22 +154,43 @@ const App: React.FC = () => {
 
   const postNormalizedData = async (data: number[][]) => {
     try {
-      const dataToSend = { landmark: data };  // データをオブジェクトに包む
+      const dataToSend = { landmark: data };
       const response = await fetch("http://localhost:8000/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(dataToSend),  // 修正箇所
+        body: JSON.stringify(dataToSend),
       });
   
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
+  
+      const result = await response.json();
+  
+      // 予測結果を処理
+      const predictions = result.prediction[0]; // 二重の配列になっている可能性があるため[0]を追加
+      const maxProbability = Math.max(...predictions);
+      const maxIndex = predictions.indexOf(maxProbability);
+  
+      // クラスと指文字のマッピング
+      const signs = ["あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ"]; // クラス数に応じて追加
+  
+      // 確率が高い場合のみ表示
+      if (maxProbability > 0.5) {
+        setPredictedSign({
+          sign: signs[maxIndex],
+          probability: maxProbability,
+        });
+      } else {
+        setPredictedSign(null); // 確率が低い場合は非表示
+      }
     } catch (error) {
       console.error("Error posting normalized data:", error);
     }
   };
+  
   
 
   // // 推論関数の型を定義
@@ -200,6 +234,15 @@ const App: React.FC = () => {
       {/* ランドマークを描画するためのcanvasタグ */}
       <canvas ref={canvasRef} style={{ width: "100%", height: "auto" }} />
       <h1>Hand Landmark Detection</h1>
+
+      {/* 予測結果の表示 */}
+      {predictedSign && (
+        <div>
+          <h2>予測された指文字: {predictedSign.sign}</h2>
+          <p>確率: {(predictedSign.probability * 100).toFixed(2)}%</p>
+        </div>
+      )}
+
     </div>
   );
 };
