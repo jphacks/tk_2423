@@ -21,6 +21,9 @@ public class AISpeechManager : MonoBehaviour
     private bool recognitionStarted = false;
     private string responseText;
 
+    [SerializeField]
+    private string subscriptionKey;
+
     public async void ToggleRecognition()
     {
         if (recognitionStarted)
@@ -38,7 +41,7 @@ public class AISpeechManager : MonoBehaviour
 
     void Start()
     {
-        SpeechConfig config = SpeechConfig.FromSubscription("f1498965b0044a97b31fb35ecebacff4", "eastasia");
+        SpeechConfig config = SpeechConfig.FromSubscription(subscriptionKey, "eastasia");
 	// 言語の日本語にするために必要
         config.SpeechRecognitionLanguage = "ja-JP";
         AudioConfig audioConfig = AudioConfig.FromDefaultMicrophoneInput();
