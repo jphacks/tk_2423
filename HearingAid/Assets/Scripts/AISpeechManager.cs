@@ -67,6 +67,8 @@ public class AISpeechManager : MonoBehaviour
             responseText = e.ErrorDetails.ToString();
             Debug.Log("Canceled: " + message);
         };
+
+        Invoke("ToggleRecognition", 1.0f);
     }
 
     void Update()
