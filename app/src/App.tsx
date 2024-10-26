@@ -141,14 +141,15 @@ const App: React.FC = () => {
 
   const postNormalizedData = async (data: number[][]) => {
     try {
-      const response = await fetch("YOUR_BACKEND_URL", {
+      const dataToSend = { landmark: data };  // データをオブジェクトに包む
+      const response = await fetch("http://localhost:8000/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(dataToSend),  // 修正箇所
       });
-
+  
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -156,6 +157,7 @@ const App: React.FC = () => {
       console.error("Error posting normalized data:", error);
     }
   };
+  
 
   // // 推論関数の型を定義
   // const infer = async (data: number[][]) => {
