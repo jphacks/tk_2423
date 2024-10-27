@@ -1,6 +1,6 @@
 # HearU
 
-[![IMAGE ALT TEXT HERE](https://github.com/user-attachments/assets/8801b2a3-0a18-45d8-a403-88e9d7eaad69)](https://youtu.be/vqLtwue3FlE)
+[![IMAGE ALT TEXT HERE](https://github.com/user-attachments/assets/162c27f1-9ac2-4245-b49a-8b81de2a99a2)](https://youtu.be/vqLtwue3FlE)
 
 ## 製品概要
 
