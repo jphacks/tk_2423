@@ -1,6 +1,6 @@
 # HearU
 
-[![IMAGE ALT TEXT HERE](https://github.com/user-attachments/assets/162c27f1-9ac2-4245-b49a-8b81de2a99a2)](https://youtu.be/vqLtwue3FlE)
+[![HearU〜みんなの声が届く、伝わる〜のイメージイラスト](https://github.com/user-attachments/assets/162c27f1-9ac2-4245-b49a-8b81de2a99a2)](https://youtu.be/vqLtwue3FlE)
 
 ## 製品概要
 
@@ -27,11 +27,13 @@ SureTalk にあった問題点は、特に 1 によって解決される。前�
 
 #### 1. 手前からの手話認識
 
+[![手前から手話をリアルタイムで撮影して認識を行っているアプリの画面](https://github.com/user-attachments/assets/823b33f2-7d05-478b-98eb-faed539e2d55)](https://youtu.be/vqLtwue3FlE)
+
 映像から手話を認識してテキスト形式に変換する研究やプロダクトは数あれど、それらは総じて少し離れた場所から手話話者を撮影することが必須であった。これは手話特有の性質によるものもあるが、「手話は外部から観測するもの」という固定観念に縛られている結果とも言える。本プロダクトでは手話話者の体の側から認識を可能にする独自モデルによって、手話 → テキストの変換を聴覚障がい者が内的に行うことができるという新規性がある。
 
 #### 2. 双方向のコミュニケーションツール
 
-[![IMAGE ALT TEXT HERE](https://github.com/user-attachments/assets/d12f7f90-6096-436a-884a-88a7f97dfb10)](https://youtu.be/vqLtwue3FlE)
+[![聴覚障がい者と健常者双方向の情報伝達の概略図](https://github.com/user-attachments/assets/d12f7f90-6096-436a-884a-88a7f97dfb10)](https://youtu.be/vqLtwue3FlE)
 
 現在聴覚障がい者と手話を知らない一般健常者とのやり取りは、往々にして簡単なジェスチャーか筆談に限られる。それは健常者が伝達ツールとして用いたい「音声」が聴覚障がい者に伝わらず、その一方で聴覚障がい者が用いたい「手話」が一般健常者には伝わらないことが原因であるが、これは円滑なコミュニケーションを行う上で大きな障壁である。私たちの開発したシステムでは二つのプロダクトがそれぞれの方向の情報伝達をサポートすることで、これら二つの問題を同時に解決している。
 
