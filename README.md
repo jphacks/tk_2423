@@ -1,6 +1,6 @@
 # HearU
 
-[![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2024/07/JPHACKS2024_ogp.jpg)](https://youtu.be/vqLtwue3FlE)
+[![IMAGE ALT TEXT HERE](https://github.com/user-attachments/assets/8801b2a3-0a18-45d8-a403-88e9d7eaad69)](https://youtu.be/vqLtwue3FlE)
 
 ## 製品概要
 
