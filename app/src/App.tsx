@@ -18,6 +18,8 @@ const App: React.FC = () => {
     probability: number;
   } | null>(null);
 
+  const [word, setWord] = useState<string>("");
+
   const lastPredictionTimeRef = useRef<number>(0);
 
   const requestsPerSecond = 2;
@@ -156,6 +158,17 @@ const App: React.FC = () => {
     return normalizedCoordinates;
   };
 
+  const wordDict: Record<string, string> = {
+    さき: "先",
+    かき: "柿",
+    かさ: "傘",
+    さけ: "酒",
+    あさ: "朝",
+    くさ: "草",
+    くせ: "癖",
+    さお: "竿",
+  };
+
   const speakSign = (sign: string) => {
     const utterance = new SpeechSynthesisUtterance(sign);
     window.speechSynthesis.speak(utterance);
@@ -164,7 +177,7 @@ const App: React.FC = () => {
   const postNormalizedData = async (data: number[][]) => {
     try {
       const dataToSend = { landmark: data };
-      const response = await fetch("http://10.100.87.2:8000/predict", {
+      const response = await fetch("https://tk-2423.onrender.com/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -209,11 +222,18 @@ const App: React.FC = () => {
           sign: newSign,
           probability: maxProbability,
         });
-        // 前回の指文字と異なる場合のみ音声を再生
-        console.log(lastSignRef.current);
+        // 新しい指文字と前の指文字を結合
+        const combinedSign =
+          (lastSignRef.current ? lastSignRef.current : "") + newSign;
+
+        // wordDictのキーと一致する場合、setWordを呼び出す
+        if (wordDict[combinedSign]) {
+          speakSign(wordDict[combinedSign]);
+          setWord(wordDict[combinedSign]);
+          console.log(word);
+        }
         if (newSign !== lastSignRef.current) {
-          speakSign(newSign);
-          lastSignRef.current = newSign; // 現在の指文字を更新
+          lastSignRef.current = newSign;
         }
       } else {
         setPredictedSign(null); // 確率が低い場合は非表示
@@ -252,7 +272,20 @@ const App: React.FC = () => {
   }, [handLandmarker, renderLoop]);
 
   return (
-    <div>
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+    >
+      <p
+        style={{
+          color: "red",
+          fontSize: "40px",
+          fontWeight: 700,
+          position: "fixed",
+          top: 0,
+        }}
+      >
+        HearU
+      </p>
       {/* カメラ映像を表示するためのvideoタグ */}
       <video
         ref={videoRef}
@@ -263,13 +296,16 @@ const App: React.FC = () => {
       />
       {/* ランドマークを描画するためのcanvasタグ */}
       <canvas ref={canvasRef} style={{ width: "100%", height: "auto" }} />
-      <h1>Hand Landmark Detection</h1>
 
       {/* 予測結果の表示 */}
       {predictedSign && (
         <div>
-          <h2>予測された指文字: {predictedSign.sign}</h2>
-          <p>確率: {(predictedSign.probability * 100).toFixed(2)}%</p>
+          <h3>
+            予測された指文字: {predictedSign.sign} (確率:{" "}
+            {(predictedSign.probability * 100).toFixed(2)}%)
+          </h3>
+          {/* <p>確率: {(predictedSign.probability * 100).toFixed(2)}%</p> */}
+          <h3>単語: {word}</h3>
         </div>
       )}
     </div>
