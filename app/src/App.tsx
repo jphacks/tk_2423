@@ -4,7 +4,6 @@ import {
   FilesetResolver,
   NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
-import * as tf from "@tensorflow/tfjs";
 
 const App: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -111,7 +110,10 @@ const App: React.FC = () => {
           const normalizedData = normalizeData(results.landmarks.flat());
 
           // リクエスト間隔に基づいてリクエストを送信
-          if (performance.now() - lastPredictionTimeRef.current > requestInterval) {
+          if (
+            performance.now() - lastPredictionTimeRef.current >
+            requestInterval
+          ) {
             lastPredictionTimeRef.current = performance.now();
             postNormalizedData(normalizedData);
           }
@@ -155,28 +157,44 @@ const App: React.FC = () => {
   const postNormalizedData = async (data: number[][]) => {
     try {
       const dataToSend = { landmark: data };
-      const response = await fetch("http://localhost:8000/predict", {
+      const response = await fetch("http://10.100.87.2:8000/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(dataToSend),
       });
-  
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-  
+
       const result = await response.json();
-  
+
       // 予測結果を処理
       const predictions = result.prediction[0]; // 二重の配列になっている可能性があるため[0]を追加
       const maxProbability = Math.max(...predictions);
       const maxIndex = predictions.indexOf(maxProbability);
-  
+
       // クラスと指文字のマッピング
-      const signs = ["あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ"]; // クラス数に応じて追加
-  
+      const signs = [
+        "あ",
+        "い",
+        "う",
+        "え",
+        "お",
+        "か",
+        "き",
+        "く",
+        "け",
+        "こ",
+        "さ",
+        "し",
+        "す",
+        "せ",
+        "そ",
+      ]; // クラス数に応じて追加
+
       // 確率が高い場合のみ表示
       if (maxProbability > 0.5) {
         setPredictedSign({
@@ -190,8 +208,6 @@ const App: React.FC = () => {
       console.error("Error posting normalized data:", error);
     }
   };
-  
-  
 
   // // 推論関数の型を定義
   // const infer = async (data: number[][]) => {
@@ -242,7 +258,6 @@ const App: React.FC = () => {
           <p>確率: {(predictedSign.probability * 100).toFixed(2)}%</p>
         </div>
       )}
-
     </div>
   );
 };
