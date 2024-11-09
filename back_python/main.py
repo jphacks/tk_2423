@@ -7,7 +7,7 @@ from typing import List
 
 # TensorFlow Liteモデルの読み込みと準備
 # モデルのパスを適宜変更してください
-MODEL_PATH = "./model/a-so-ikami-mikubo-model-flip.tflite"
+MODEL_PATH = "./model/a-nn-ikami-mikubo-fujikawa-model-flip-xy.tflite"
 
 # TFLiteモデルの読み込み
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
