@@ -5,6 +5,8 @@ import {
   NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 
+import axios from "axios";
+
 const App: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -20,7 +22,14 @@ const App: React.FC = () => {
 
   const [word, setWord] = useState<string>("");
 
+  //文章
+  const [finalSentence, setFinalSentence] = useState<string>("");
+
+  // 累積された文字列を内部で保持する
+  const accumulatedTextRef = useRef<string>("");
+
   const lastPredictionTimeRef = useRef<number>(0);
+  const lastSignTimeRef = useRef<number>(0);
 
   const requestsPerSecond = 2;
   const requestInterval = 1000 / requestsPerSecond;
@@ -174,10 +183,16 @@ const App: React.FC = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+  const speakText = (text: string) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
+  };
+  
+
   const postNormalizedData = async (data: number[][]) => {
     try {
       const dataToSend = { landmark: data };
-      const response = await fetch("https://tk-2423.onrender.com/predict", {
+      const response = await fetch("http://127.0.0.1:8000/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -290,6 +305,71 @@ const App: React.FC = () => {
   //     return undefined;
   //   }
   // };
+  
+  useEffect(() => {
+    const checkInactivity = () => {
+      const now = performance.now();
+      const timeSinceLastSign = now - lastSignTimeRef.current;
+
+      if (
+        accumulatedTextRef.current.length > 0 &&
+        timeSinceLastSign > 3000 // 3秒
+      ) {
+        // ChatGPT APIに送信
+        fetchChatGPTResponse(accumulatedTextRef.current);
+
+        // 累積テキストをリセット
+        accumulatedTextRef.current = "";
+      }
+    };
+
+    const intervalId = setInterval(checkInactivity, 1000); // 毎秒チェック
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // ChatGPT APIにリクエストを送信する関数
+  const fetchChatGPTResponse = async (text: string) => {
+    console.log("Sending text to ChatGPT:", text);
+    try {
+      // 環境変数やサーバーサイドからAPIキーを取得
+      const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("OpenAI APIキーが設定されていません。");
+      }
+
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "user",
+              content: `以下のひらがなを自然な日本語の単語や文章にしてください：「${text}」`,
+            },
+          ],
+          max_tokens: 100,
+          temperature: 0.7,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+        }
+      );
+
+      const assistantMessage = response.data.choices[0].message.content.trim();
+
+      // 結果を表示
+      setFinalSentence(assistantMessage);
+
+      // 音声で発話
+      speakText(assistantMessage);
+    } catch (error) {
+      console.error("Error fetching ChatGPT response:", error);
+    }
+  };
 
   useEffect(() => {
     if (handLandmarker) {
@@ -332,6 +412,12 @@ const App: React.FC = () => {
           </h3>
           {/* <p>確率: {(predictedSign.probability * 100).toFixed(2)}%</p> */}
           <h3>単語: {word}</h3>
+        </div>
+      )}
+      {/* 最終的な文章の表示 */}
+      {finalSentence && (
+        <div>
+          <h3>生成された文章: {finalSentence}</h3>
         </div>
       )}
     </div>
