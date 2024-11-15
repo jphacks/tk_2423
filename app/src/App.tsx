@@ -335,12 +335,16 @@ useEffect(() => {
           model: "gpt-3.5-turbo",
           messages: [
             {
+              role: "system",
+              content: "あなたは、入力されたひらがなを自然な日本語に変換するアシスタントです。単独の文字の場合、そのままの文字を返します。意味が通じる必要はありません。変換結果以外の情報は一切返さないでください。余計な説明や記号を含めないでください。",
+            },
+            {
               role: "user",
-              content: `かっこのひらがなを自然な日本語の単語や文章にしてください：「${text}」`,
+              content: `${text}`,
             },
           ],
-          max_tokens: 50,
-          temperature: 0.7,
+          max_tokens: 20,
+          temperature: 0.1,
         },
         {
           headers: {
@@ -349,8 +353,10 @@ useEffect(() => {
           },
         }
       );
+      
 
       const assistantMessage = response.data.choices[0].message.content.trim();
+      console.log("ChatGPT response:", assistantMessage);
 
       // 結果を表示
       setFinalSentence(assistantMessage);
