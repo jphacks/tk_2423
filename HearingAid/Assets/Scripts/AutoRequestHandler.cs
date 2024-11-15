@@ -17,6 +17,7 @@ public class AutoRequestHandler : MonoBehaviour
         while (true)
         {
             // APIClientのGetItemメソッドを呼び出す
+            yield return StartCoroutine(apiClient.GetLatestSign());
             yield return StartCoroutine(apiClient.GetIsOn());
             
             // 指定された間隔だけ待機
