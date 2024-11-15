@@ -20,8 +20,6 @@ const App: React.FC = () => {
     probability: number;
   } | null>(null);
 
-  const [word, setWord] = useState<string>("");
-
   //文章
   const [finalSentence, setFinalSentence] = useState<string>("");
 
@@ -167,22 +165,6 @@ const App: React.FC = () => {
     return normalizedCoordinates;
   };
 
-  const wordDict: Record<string, string> = {
-    さき: "先",
-    かき: "柿",
-    かさ: "傘",
-    さけ: "酒",
-    あさ: "朝",
-    くさ: "草",
-    くせ: "癖",
-    さお: "竿",
-  };
-
-  const speakSign = (sign: string) => {
-    const utterance = new SpeechSynthesisUtterance(sign);
-    window.speechSynthesis.speak(utterance);
-  };
-
   const speakText = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
@@ -258,26 +240,29 @@ const App: React.FC = () => {
 
       // 確率が高い場合のみ表示
       if (maxProbability > 0.5) {
+        // 指文字が検出された場合
         const newSign = signs[maxIndex];
         setPredictedSign({
           sign: newSign,
           probability: maxProbability,
         });
-        // 新しい指文字と前の指文字を結合
-        const combinedSign =
-          (lastSignRef.current ? lastSignRef.current : "") + newSign;
-
-        // wordDictのキーと一致する場合、setWordを呼び出す
-        if (wordDict[combinedSign]) {
-          speakSign(wordDict[combinedSign]);
-          setWord(wordDict[combinedSign]);
-          console.log(word);
-        }
+  
+        // 現在の時刻を取得
+        const now = performance.now();
+  
         if (newSign !== lastSignRef.current) {
           lastSignRef.current = newSign;
+          accumulatedTextRef.current += newSign;
+          console.log(`累積された指文字: ${accumulatedTextRef.current}`);
         }
+  
+        // **指文字が検出されたので、最終検出時間を更新**
+        lastSignTimeRef.current = now;
       } else {
-        setPredictedSign(null); // 確率が低い場合は非表示
+        // **指文字が検出されなかった場合でも、最終検出時間を更新**
+        lastSignTimeRef.current = performance.now();
+  
+        setPredictedSign(null);
       }
     } catch (error) {
       console.error("Error posting normalized data:", error);
@@ -306,34 +291,40 @@ const App: React.FC = () => {
   //   }
   // };
   
-  useEffect(() => {
-    const checkInactivity = () => {
-      const now = performance.now();
-      const timeSinceLastSign = now - lastSignTimeRef.current;
+  // 新しいRefを追加
+const lastActiveTimeRef = useRef<number>(performance.now());
 
-      if (
-        accumulatedTextRef.current.length > 0 &&
-        timeSinceLastSign > 3000 // 3秒
-      ) {
-        // ChatGPT APIに送信
-        fetchChatGPTResponse(accumulatedTextRef.current);
+useEffect(() => {
+  const checkInactivity = () => {
+    const now = performance.now();
+    const timeSinceLastSign = now - lastSignTimeRef.current;
+    const timeSinceLastActive = now - lastActiveTimeRef.current;
 
-        // 累積テキストをリセット
-        accumulatedTextRef.current = "";
-      }
-    };
+    if (timeSinceLastSign < 1000) {
+      // 入力が続いている場合、最終アクティブ時間を更新
+      lastActiveTimeRef.current = now;
+    } else if (
+      accumulatedTextRef.current.length > 0 &&
+      timeSinceLastActive > 1500
+    ) {
+      // 入力が停止してから一定時間経過した場合のみ送信
+      fetchChatGPTResponse(accumulatedTextRef.current);
+      accumulatedTextRef.current = "";
+    }
+  };
 
-    const intervalId = setInterval(checkInactivity, 1000); // 毎秒チェック
+  const intervalId = setInterval(checkInactivity, 1000);
 
-    return () => clearInterval(intervalId);
-  }, []);
+  return () => clearInterval(intervalId);
+}, []);
+
 
   // ChatGPT APIにリクエストを送信する関数
   const fetchChatGPTResponse = async (text: string) => {
     console.log("Sending text to ChatGPT:", text);
     try {
       // 環境変数やサーバーサイドからAPIキーを取得
-      const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
       if (!apiKey) {
         throw new Error("OpenAI APIキーが設定されていません。");
       }
@@ -345,10 +336,10 @@ const App: React.FC = () => {
           messages: [
             {
               role: "user",
-              content: `以下のひらがなを自然な日本語の単語や文章にしてください：「${text}」`,
+              content: `かっこのひらがなを自然な日本語の単語や文章にしてください：「${text}」`,
             },
           ],
-          max_tokens: 100,
+          max_tokens: 50,
           temperature: 0.7,
         },
         {
@@ -410,8 +401,6 @@ const App: React.FC = () => {
             予測された指文字: {predictedSign.sign} (確率:{" "}
             {(predictedSign.probability * 100).toFixed(2)}%)
           </h3>
-          {/* <p>確率: {(predictedSign.probability * 100).toFixed(2)}%</p> */}
-          <h3>単語: {word}</h3>
         </div>
       )}
       {/* 最終的な文章の表示 */}
