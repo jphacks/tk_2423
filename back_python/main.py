@@ -1,22 +1,20 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
 import tensorflow as tf
 from typing import List
+import time
 
 # TensorFlow Liteモデルの読み込みと準備
-# モデルのパスを適宜変更してください
 MODEL_PATH = "./model/a-nn-ikami-mikubo-fujikawa-model-xy-ver2.tflite"
 
 # TFLiteモデルの読み込み
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
-# メモリの確保
 interpreter.allocate_tensors()
-# 入力層・出力層の情報を取得
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
-print(input_details[0]['shape'])
+
 # FastAPIのインスタンスを作成
 app = FastAPI()
 
@@ -29,29 +27,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 最新の推論結果を保持するための変数
+latest_output_data = None
+
+# 起動状態を表す変数
+appIsOn = False
+
+# タイムアウト監視用のタイムスタンプ
+last_request_time = None
+
 # 入力データの構造を定義
 class HandLandmarks(BaseModel):
     landmark: List[List[float]]  # リストのリスト形式で各ランドマークの[x, y, z]を表現
 
+# タイムアウトを監視し、10秒が経過するとappIsOnをFalseに設定
+def monitor_timeout():
+    global appIsOn, last_request_time
+    while True:
+        if appIsOn and (time.time() - last_request_time > 2):
+            appIsOn = False
+        time.sleep(1)  # 1秒ごとにチェック
 
-# ルートエンドポイントの追加
+# バックグラウンドでタイムアウト監視を開始
+import threading
+threading.Thread(target=monitor_timeout, daemon=True).start()
 
+# POSTリクエストで推論を行い、最新の結果を保存
 @app.post("/predict")
-def predict(hand_data: HandLandmarks):
+async def predict(hand_data: HandLandmarks, background_tasks: BackgroundTasks):
+    global latest_output_data, appIsOn, last_request_time
+
+    appIsOn = True
+    last_request_time = time.time()  # リクエストのタイムスタンプを更新
+
     try:
-        # OK
         # 手のランドマークデータをnumpy配列に変換し、float32型にキャスト
         input_data = np.array(hand_data.landmark, dtype=np.float32)
-        #print(input_data)
-        # numpy配列が期待する形状であることを確認
-        # if input_data.shape != tuple(input_details[0]['shape'][1:]):
-        #     print(f"入力データの形状が期待される形状 {tuple(input_details[0]['shape'][1:])} と一致しません。")
-            
 
         # モデルの入力形状に合わせてリシェイプ
         input_data = input_data.reshape(input_details[0]['shape'])
-
-       # print(input_data)
 
         # 入力データをモデルにセット
         interpreter.set_tensor(input_details[0]['index'], input_data)
@@ -60,12 +74,26 @@ def predict(hand_data: HandLandmarks):
         interpreter.invoke()
 
         # 推論結果の取得
-        output_data = interpreter.get_tensor(output_details[0]['index'])
-
-        # print(output_data)
+        latest_output_data = interpreter.get_tensor(output_details[0]['index'])
 
         # 結果をJSON形式で返す
-        return {"prediction": output_data.tolist()}
+        return {"prediction": latest_output_data.tolist()}
     except Exception as e:
         # エラーが発生した場合はHTTP例外を返す
         raise HTTPException(status_code=500, detail=str(e))
+
+# GETリクエストで最新の推論結果を返すエンドポイント
+@app.get("/now_prediction")
+async def get_now_prediction():
+    if latest_output_data is None:
+        return {"message": "No prediction available yet."}
+    return {"latest_prediction": latest_output_data.tolist()}
+
+# GETリクエストで起動状態を返すエンドポイント
+@app.get("/isOn")
+async def read_isOn():
+    return appIsOn
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
