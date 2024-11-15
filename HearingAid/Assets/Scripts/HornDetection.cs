@@ -95,8 +95,8 @@ public class HornDetection : MonoBehaviour
         for (int i = 140; i < 265;i++){
             prediction += fftData[(int)car_horn_index * i] /fftMean;
         }
-        Debug.Log("Prediction: " + prediction);
-        Debug.Log("FFT Mean: " + fftMean);
+        //Debug.Log("Prediction: " + prediction);
+        //Debug.Log("FFT Mean: " + fftMean);
         // 判定結果の出力
         if (prediction > 1.7 && fftMean > 0.2)
         {
