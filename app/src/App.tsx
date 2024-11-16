@@ -117,10 +117,6 @@ const App: React.FC = () => {
     if (video && canvas && handLandmarker) {
       const startTimeMs = performance.now();
       const ctx = canvas.getContext("2d");
-
-      //左右反転
-      video.style.transform = 'scaleX(-1)';
-      video.style.transformOrigin = 'center'; // 中心を基準に反転
       
       if (video.currentTime > 0) {
         
