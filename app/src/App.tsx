@@ -112,6 +112,10 @@ const App: React.FC = () => {
     if (video && handLandmarker) {
       const startTimeMs = performance.now();
       if (video.currentTime > 0) {
+        
+        video.style.transform = 'scaleX(-1)';
+        video.style.transformOrigin = 'center'; // 中心を基準に反転
+        
         const results = await handLandmarker.detectForVideo(video, startTimeMs);
 
         if (results.landmarks && results.landmarks.length > 0) {
