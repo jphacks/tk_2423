@@ -112,29 +112,49 @@ const App: React.FC = () => {
 
   const renderLoop = useCallback(async () => {
     const video = videoRef.current;
-    if (video && handLandmarker) {
+    const canvas = canvasRef.current;
+  
+    if (video && canvas && handLandmarker) {
       const startTimeMs = performance.now();
+      const ctx = canvas.getContext("2d");
+  
       if (video.currentTime > 0) {
         const results = await handLandmarker.detectForVideo(video, startTimeMs);
-
-        if (results.landmarks && results.landmarks.length > 0) {
-          drawLandmarks(results.landmarks.flat());
-          const normalizedData = normalizeData(results.landmarks.flat());
-
-          // リクエスト間隔に基づいてリクエストを送信
-          if (
-            performance.now() - lastPredictionTimeRef.current >
-            requestInterval
-          ) {
-            lastPredictionTimeRef.current = performance.now();
-            postNormalizedData(normalizedData);
+  
+        // キャンバスのサイズを動画に合わせて設定
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+  
+        if (ctx) {
+          // キャンバスをクリア
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+          // 動画フレームを描画
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+          if (results.landmarks && results.landmarks.length > 0) {
+            // 手が検知された場合、ランドマークを描画
+            drawLandmarks(results.landmarks.flat());
+  
+            const normalizedData = normalizeData(results.landmarks.flat());
+  
+            // リクエスト間隔に基づいてリクエストを送信
+            if (
+              performance.now() - lastPredictionTimeRef.current >
+              requestInterval
+            ) {
+              lastPredictionTimeRef.current = performance.now();
+              postNormalizedData(normalizedData);
+            }
           }
         }
       }
-
+  
+      // 次のフレームをリクエスト
       requestAnimationFrame(renderLoop);
     }
   }, [handLandmarker, requestInterval]);
+  
 
   const normalizeData = (data: NormalizedLandmark[]): number[][] => {
     let x = 0;
@@ -414,7 +434,6 @@ useEffect(() => {
       <h1 className="header">HearU</h1>
   
       <div className="video-canvas-container">
-        {/* カメラ映像を表示するためのvideoタグ */}
         <video
           ref={videoRef}
           autoPlay
@@ -422,32 +441,34 @@ useEffect(() => {
           muted
           style={{ display: "none" }}
         />
-        {/* ランドマークを描画するためのcanvasタグ */}
         <canvas ref={canvasRef} className="canvas" />
       </div>
   
-      {/* 予測結果の表示 */}
-      <div className="prediction">
-        <h3>
-          予測された指文字: {predictedSign ? predictedSign.sign : "認識中..."}{" "}
-          (確率:{" "}
-          {predictedSign
-            ? (predictedSign.probability * 100).toFixed(2) + "%"
-            : "0%"})
-        </h3>
+      <div className="prediction-accumulated-container">
+      {/* 予測結果ボックス */}
+      <div className="prediction-box">
+        <span>予測結果</span>
+        <p>
+          指文字: {predictedSign ? predictedSign.sign : "認識中..."} <br />
+          確率: {predictedSign ? (predictedSign.probability * 100).toFixed(2) + "%" : "0%"}
+        </p>
       </div>
   
-      {/* 累計文字の表示 */}
-      <div className="accumulated-text">
-        <h3>累計文字: {accumulatedText}</h3>
+      {/* 累計文字ボックス */}
+      <div className="accumulated-box">
+        <span>累計文字</span>
+        <p>{accumulatedText || "入力待ち..."}</p>
+      </div>
       </div>
   
-      {/* 最終的な文章の表示 */}
-      <div className="final-sentence">
-        <h3>生成された文章: {finalSentence || "..."}</h3>
+      {/* 文章ボックス */}
+      <div className="final-box">
+        <span>単語/文章</span>
+        <p>{finalSentence || "生成待ち..."}</p>
       </div>
     </div>
   );
+  
   
 };
 
