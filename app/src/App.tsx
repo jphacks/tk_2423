@@ -91,11 +91,6 @@ const App: React.FC = () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
 
-        // 左右反転する
-        const width = ctx.canvas.width;
-        ctx.scale(-1, 1);
-        ctx.translate(-width, 0)
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -124,9 +119,6 @@ const App: React.FC = () => {
       const ctx = canvas.getContext("2d");
   
       if (video.currentTime > 0) {
-        
-        video.style.transform = 'scaleX(-1)';
-        video.style.transformOrigin = 'center'; // 中心を基準に反転
         
         const results = await handLandmarker.detectForVideo(video, startTimeMs);
 
