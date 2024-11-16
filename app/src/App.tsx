@@ -120,6 +120,9 @@ const App: React.FC = () => {
   
       if (video.currentTime > 0) {
 
+        video.style.transform = 'scaleX(-1)';
+        video.style.transformOrigin = 'center'; // 中心を基準に反転
+
         const results = await handLandmarker.detectForVideo(video, startTimeMs);
   
         // キャンバスのサイズを動画に合わせて設定
