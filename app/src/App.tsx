@@ -441,7 +441,7 @@ useEffect(() => {
           autoPlay
           playsInline
           muted
-          style={{ display: "none" }}
+          style="-webkit-transform: scaleX(-1); display: none;"
         />
         <canvas ref={canvasRef} className="canvas" />
       </div>
