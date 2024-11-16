@@ -1,0 +1,72 @@
+/* 全体のコンテナ */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Arial', sans-serif;
+    padding: 20px;
+    background-color: #f0f0f0;
+    min-height: 100vh;
+}
+  /* ヘッダー */
+.header {
+    color: red;
+    font-size: 36px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+  /* ビデオとキャンバスのコンテナ */
+.video-canvas-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin-top: 20px;
+}
+
+  /* キャンバス */
+.canvas {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+  /* 予測結果の表示 */
+.prediction {
+    margin-top: 20px;
+    text-align: center;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+  /* 累計文字の表示 */
+.accumulated-text {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+  /* 最終的な文章の表示 */
+.final-sentence {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}

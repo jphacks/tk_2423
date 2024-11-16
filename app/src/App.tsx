@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import "./App.css";
 import {
   HandLandmarker,
   FilesetResolver,
@@ -169,8 +170,17 @@ const App: React.FC = () => {
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
   };
-  
 
+  const sameSignCountRef = useRef<number>(0); // 同じ指文字が連続した回数
+  const requiredConsecutiveCount = 3; // 確定に必要な連続回数
+  
+  // 新しいRefを追加
+  const lastConfirmedSignRef = useRef<string | null>(null);
+
+  // 累計文字を状態で管理
+  const [accumulatedText, setAccumulatedText] = useState<string>("");
+
+  // postNormalizedData関数の中で累計文字を更新
   const postNormalizedData = async (data: number[][]) => {
     try {
       const dataToSend = { landmark: data };
@@ -189,7 +199,7 @@ const App: React.FC = () => {
       const result = await response.json();
 
       // 予測結果を処理
-      const predictions = result.prediction[0]; // 二重の配列になっている可能性があるため[0]を追加
+      const predictions = result.prediction[0];
       const maxProbability = Math.max(...predictions);
       const maxIndex = predictions.indexOf(maxProbability);
 
@@ -199,75 +209,100 @@ const App: React.FC = () => {
         "い",
         "う",
         "え",
-        "お", // 0-4
+        "お",
         "か",
         "き",
         "く",
         "け",
-        "こ", // 5-9
+        "こ",
         "さ",
         "し",
         "す",
         "せ",
-        "そ", // 10-14
+        "そ",
         "た",
         "ち",
         "つ",
         "て",
-        "と", // 15-19
+        "と",
         "な",
         "に",
         "ぬ",
-        "ね", // 20-23
+        "ね",
         "は",
         "ひ",
         "ふ",
         "へ",
-        "ほ", // 25-29
+        "ほ",
         "ま",
         "み",
         "む",
-        "め", // 30-33
+        "め",
         "や",
         "ゆ",
-        "よ", // 35-37
+        "よ",
         "ら",
         "る",
         "れ",
-        "ろ", // 38, 40-42
-        "わ", // 43
-      ]; // クラス数に応じて追加
+        "ろ",
+        "わ",
+      ];
 
-      // 確率が高い場合のみ表示
       if (maxProbability > 0.5) {
-        // 指文字が検出された場合
         const newSign = signs[maxIndex];
+
         setPredictedSign({
           sign: newSign,
           probability: maxProbability,
         });
-  
+
         // 現在の時刻を取得
         const now = performance.now();
-  
-        if (newSign !== lastSignRef.current) {
+
+        if (newSign === lastSignRef.current) {
+          // 同じ指文字が連続して検出された場合、カウントを増加
+          sameSignCountRef.current += 1;
+        } else {
+          // 異なる指文字が検出された場合、カウントをリセット
+          sameSignCountRef.current = 1;
           lastSignRef.current = newSign;
+        }
+
+        // カウントが指定回数に達した場合、前回確定した指文字と異なる場合のみ累積
+        if (
+          sameSignCountRef.current >= requiredConsecutiveCount &&
+          newSign !== lastConfirmedSignRef.current
+        ) {
           accumulatedTextRef.current += newSign;
           console.log(`累積された指文字: ${accumulatedTextRef.current}`);
+
+          // 累計文字を状態に反映
+          setAccumulatedText(accumulatedTextRef.current);
+
+          // 最後に確定した指文字を更新
+          lastConfirmedSignRef.current = newSign;
+
+          // カウントをリセット
+          sameSignCountRef.current = 0;
         }
-  
-        // **指文字が検出されたので、最終検出時間を更新**
+
+        // 最終検出時間を更新
         lastSignTimeRef.current = now;
       } else {
-        // **指文字が検出されなかった場合でも、最終検出時間を更新**
+        // 指文字が検出されなかった場合、カウントをリセット
+        sameSignCountRef.current = 0;
+        lastSignRef.current = null;
         lastSignTimeRef.current = performance.now();
-  
+
         setPredictedSign(null);
       }
     } catch (error) {
       console.error("Error posting normalized data:", error);
     }
   };
+
+
+  
 
   // // 推論関数の型を定義
   // const infer = async (data: number[][]) => {
@@ -305,7 +340,7 @@ useEffect(() => {
       lastActiveTimeRef.current = now;
     } else if (
       accumulatedTextRef.current.length > 0 &&
-      timeSinceLastActive > 1500
+      timeSinceLastActive > 1000
     ) {
       // 入力が停止してから一定時間経過した場合のみ送信
       fetchChatGPTResponse(accumulatedTextRef.current);
@@ -375,48 +410,45 @@ useEffect(() => {
   }, [handLandmarker, renderLoop]);
 
   return (
-    <div
-      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
-    >
-      <p
-        style={{
-          color: "red",
-          fontSize: "40px",
-          fontWeight: 700,
-          position: "fixed",
-          top: 0,
-        }}
-      >
-        HearU
-      </p>
-      {/* カメラ映像を表示するためのvideoタグ */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        style={{ display: "none" }}
-      />
-      {/* ランドマークを描画するためのcanvasタグ */}
-      <canvas ref={canvasRef} style={{ width: "100%", height: "auto" }} />
-
+    <div className="container">
+      <h1 className="header">HearU</h1>
+  
+      <div className="video-canvas-container">
+        {/* カメラ映像を表示するためのvideoタグ */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ display: "none" }}
+        />
+        {/* ランドマークを描画するためのcanvasタグ */}
+        <canvas ref={canvasRef} className="canvas" />
+      </div>
+  
       {/* 予測結果の表示 */}
-      {predictedSign && (
-        <div>
-          <h3>
-            予測された指文字: {predictedSign.sign} (確率:{" "}
-            {(predictedSign.probability * 100).toFixed(2)}%)
-          </h3>
-        </div>
-      )}
+      <div className="prediction">
+        <h3>
+          予測された指文字: {predictedSign ? predictedSign.sign : "認識中..."}{" "}
+          (確率:{" "}
+          {predictedSign
+            ? (predictedSign.probability * 100).toFixed(2) + "%"
+            : "0%"})
+        </h3>
+      </div>
+  
+      {/* 累計文字の表示 */}
+      <div className="accumulated-text">
+        <h3>累計文字: {accumulatedText}</h3>
+      </div>
+  
       {/* 最終的な文章の表示 */}
-      {finalSentence && (
-        <div>
-          <h3>生成された文章: {finalSentence}</h3>
-        </div>
-      )}
+      <div className="final-sentence">
+        <h3>生成された文章: {finalSentence || "..."}</h3>
+      </div>
     </div>
   );
+  
 };
 
 export default App;
