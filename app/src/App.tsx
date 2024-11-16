@@ -119,6 +119,7 @@ const App: React.FC = () => {
       const ctx = canvas.getContext("2d");
   
       if (video.currentTime > 0) {
+
         const results = await handLandmarker.detectForVideo(video, startTimeMs);
   
         // キャンバスのサイズを動画に合わせて設定
@@ -204,7 +205,7 @@ const App: React.FC = () => {
   const postNormalizedData = async (data: number[][]) => {
     try {
       const dataToSend = { landmark: data };
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      const response = await fetch("https://tk-2423.onrender.com/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
