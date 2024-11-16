@@ -83,6 +83,11 @@ const App: React.FC = () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
 
+        // 左右反転する
+        const width = ctx.canvas.width;
+        ctx.scale(-1, 1);
+        ctx.translate(-width, 0)
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
