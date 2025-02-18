@@ -40,6 +40,11 @@ last_request_time = None
 class HandLandmarks(BaseModel):
     landmark: List[List[float]]  # リストのリスト形式で各ランドマークの[x, y, z]を表現
 
+class SpectrumData(BaseModel):
+    sampleRate: int
+    spectrum: list[float]  # Python3.9+ の場合: list[float] / それ以前は List[float] など
+
+
 # タイムアウトを監視し、10秒が経過するとappIsOnをFalseに設定
 def monitor_timeout():
     global appIsOn, last_request_time
@@ -93,6 +98,35 @@ async def get_now_prediction():
 @app.get("/isOn")
 async def read_isOn():
     return appIsOn
+
+
+@app.post("/fft")
+def classify_fft(data: SpectrumData):
+    """
+    Unityから送られてきたスペクトラムデータを受け取り、
+    TFLiteモデルで推論した結果を返すエンドポイント。
+    """
+    # 受け取ったスペクトラムをNumPy配列に変換
+    input_data = np.array(data.spectrum, dtype=np.float32)
+
+    # モデル入力の形状に合わせてリシェイプ（例: [1, 8192]など）
+    # スペクトラム長に合わせて可変にする場合: reshape((1, -1))
+    input_data = input_data.reshape((1, -1))
+
+    # TFLiteモデルに入力データをセット
+    # interpreter.set_tensor(input_details[0]['index'], input_data)
+
+    # # 推論実行
+    # interpreter.invoke()
+
+    # # モデルの出力を取得
+    # output_data = interpreter.get_tensor(output_details[0]['index'])  # shape例: [1, num_classes]
+
+    # # 分類モデルの想定であれば argmax を取る
+    # predicted_class = np.argmax(output_data, axis=1)[0]
+
+    # 例: 返却データをJSON形式で返す（クラスインデックスを返却）
+    return {"predicted_class": 1}
 
 if __name__ == "__main__":
     import uvicorn
