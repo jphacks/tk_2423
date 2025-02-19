@@ -101,7 +101,7 @@ async def read_isOn():
 
 
 @app.post("/fft")
-def classify_fft(data: SpectrumData):
+async def classify_fft(data: SpectrumData):
     """
     Unityから送られてきたスペクトラムデータを受け取り、
     TFLiteモデルで推論した結果を返すエンドポイント。
